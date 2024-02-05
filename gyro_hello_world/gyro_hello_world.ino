@@ -72,9 +72,9 @@ void recordAccelRegisters() {
 void processAccelData() {
   // LSB/g glej poglavje 4.17
   // FIXME: vrednost je določena le ko je accel nastavljen na 2G
-  gForceX = accelX / 16384.0;
-  gForceY = accelY / 16384.0;
-  gForceZ = accelZ / 16384.0;
+  gForceX = (accelX - 1248) / 16384.0;
+  gForceY = (accelY + 16) / 16384.0;
+  gForceZ = (accelZ - 190) / 16384.0;
 }
 
 void recordGyroRegisters() {
@@ -92,26 +92,38 @@ void recordGyroRegisters() {
 void processGyroData() {
   // LSB/deg/s glej poglavje 4.19
   // FIXME: vrednost je določena le ko je 250deg/s
-  rotX = gyroX / 131.0;
-  rotY = gyroY / 131.0; 
-  rotZ = gyroZ / 131.0;
+  rotX = (gyroX + 199)/ 131.0;
+  rotY = (gyroY - 189) / 131.0; 
+  rotZ = (gyroZ - 26) / 131.0;
 }
 
 
 void printData() {
-  Serial.print("Gyro (deg)");
-  Serial.print(" X=");
-  Serial.print(rotX);
-  Serial.print(" Y=");
-  Serial.print(rotY);
-  Serial.print(" Z=");
-  Serial.print(rotZ);
-  Serial.print(" Accel (g)");
-  Serial.print(" X=");
+  // Serial.print("Gyro (deg)");
+  // Serial.print(" X=");
+  // Serial.print(rotX);
+  // Serial.print(" Y=");
+  // Serial.print(rotY);
+  // Serial.print(" Z=");
+  // Serial.print(rotZ);
+  // Serial.print(" Accel (g)");
+  // Serial.print(" X=");
+  // Serial.print(gForceX);
+  // Serial.print(" Y=");
+  // Serial.print(gForceY);
+  // Serial.print(" Z=");
+  // Serial.println(gForceZ);
+  // Serial.print("Gyro (deg)");
+  // Serial.print(" X=");
+  // Serial.print(rotX);
+  // Serial.print(" Y=");
+  // Serial.print(rotY);
+  // Serial.print(" Z=");
+  // Serial.print(rotZ);
   Serial.print(gForceX);
-  Serial.print(" Y=");
+  Serial.print(",");
   Serial.print(gForceY);
-  Serial.print(" Z=");
+  Serial.print(",");
   Serial.println(gForceZ);
 }
 
