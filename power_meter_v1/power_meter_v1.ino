@@ -102,7 +102,7 @@ void loop() {
   // mqttMsg = String(mpuData.gForceXAverage) + "," + String(mpuData.gForceYAverage) + "," + String(mpuData.gForceZAverage) + "," + String(mpuData.rotXAverage) + "," + String(mpuData.rotYAverage) + "," + String(mpuData.rotZAverage) + "," + String(rawWeight);
   mqttMsg = String(gForceX) + "," + String(gForceY) + "," + String(gForceZ) + "," + String(rotX) + "," + String(rotY) + "," + String(rotZ) + "," + String(rawWeight);
   client.publish(topic, mqttMsg.c_str());
-  delay(5);
+  delay(500);
 }
 
 // functions for HX711
@@ -116,6 +116,7 @@ void getWeight() {
 }
 
 // functions for MPU-6050
+// mpu6050_const.h contains lots of variables for this
 void setupMpu() {
   // FIXME: dodaj support za to da se nastavi žiroskop in pospeškomer
   // konfiguracija power-ja
@@ -132,7 +133,23 @@ void setupMpu() {
   // 01 (1) +/- 500deg/s
   // 10 (2) +/- 1000deg/s
   // 11 (3) +/- 2000deg/s
-  Wire.write(0b00000000);  // nastavljen +/- 250deg/s
+
+  uint8_t gyro_config;
+  switch (FS_SEL) {
+    case 0:
+      gyro_config = 0b00000000;  // nastavljen na +/- 250deg/sec
+      break;
+    case 1:
+      gyro_config = 0b00001000;  // nastavljen na +/- 500deg/sec
+      break;
+    case 2:
+      gyro_config = 0b00010000;  // nastavljen na +/- 1000deg/sec
+      break;
+    case 3:
+      gyro_config = 0b00011000;  // nastavljen na +/- 2000deg/sec
+      break;
+  }
+  Wire.write(gyro_config);
   Wire.endTransmission();
 
   // konfiguracija pospeškomera
@@ -142,7 +159,22 @@ void setupMpu() {
   // 01 (1) +/- 4g
   // 10 (2) +/- 8g
   // 11 (3) +/- 16g
-  Wire.write(0b00000000);  // nastavljen na +/- 2g
+  uint8_t accel_config;
+  switch (AFS_SEL) {
+    case 0:
+      accel_config = 0b00000000;  // nastavljen na +/- 250deg/sec
+      break;
+    case 1:
+      accel_config = 0b00001000;  // nastavljen na +/- 500deg/sec
+      break;
+    case 2:
+      accel_config = 0b00010000;  // nastavljen na +/- 1000deg/sec
+      break;
+    case 3:
+      accel_config = 0b00011000;  // nastavljen na +/- 2000deg/sec
+      break;
+  }
+  Wire.write(accel_config);
   Wire.endTransmission();
 }
 
@@ -166,17 +198,19 @@ void processAccelData() {
   // FIXME: vrednost je določena le ko je accel nastavljen na 2G
   // kalibracija z magneto 1.2 100 podatkov
   // 16384
-  gForceX = (accelX - BIAS_ACCEL_X);
-  gForceY = (accelY - BIAS_ACCEL_Y);
-  gForceZ = (accelZ - BIAS_ACCEL_X);
+  // what this is doing is basicly just dividing bias so that it matches current setting of deg/sec
+  // FIXME: not the best method. Calibrate it to current settings
+  gForceX = (accelX - ((BIAS_ACCEL_X) / (LSB_G_CALIBRATED / LSB_G)));
+  gForceY = (accelY - ((BIAS_ACCEL_Y) / (LSB_G_CALIBRATED / LSB_G)));
+  gForceZ = (accelZ - ((BIAS_ACCEL_Z) / (LSB_G_CALIBRATED / LSB_G)));
 
   gForceX = mpuCalibMatrix[0][0] * gForceX + mpuCalibMatrix[0][1] * gForceY + mpuCalibMatrix[0][2] * gForceZ;
   gForceY = mpuCalibMatrix[1][0] * gForceX + mpuCalibMatrix[1][1] * gForceY + mpuCalibMatrix[1][2] * gForceZ;
   gForceZ = mpuCalibMatrix[2][0] * gForceX + mpuCalibMatrix[2][1] * gForceY + mpuCalibMatrix[2][2] * gForceZ;
 
-  gForceX = gForceX / 16384;
-  gForceY = gForceY / 16384;
-  gForceZ = gForceZ / 16384;
+  gForceX = gForceX / LSB_G;
+  gForceY = gForceY / LSB_G;
+  gForceZ = gForceZ / LSB_G;
 }
 
 void recordGyroRegisters() {
@@ -194,10 +228,23 @@ void recordGyroRegisters() {
 
 void processGyroData() {
   // LSB/deg/s glej poglavje 4.19
-  // FIXME: vrednost je določena le ko je 250deg/s
-  rotX = (gyroX - OFFSET_GYRO_X) / 131.0;
-  rotY = (gyroY - OFFSET_GYRO_Y) / 131.0;
-  rotZ = (gyroZ - OFFSET_GYRO_Z) / 131.0;
+  // what this is doing is basicly just dividing bias so that it matches current setting of deg/sec
+  // FIXME: not the best method. Calibrate it to current settings
+  // FIXME: i dont know if this matrix is the best for gyro data to
+  rotX = (gyroX - ((BIAS_GYRO_X) / (LSB_DEG_CALIBRATED / LSB_DEG)));
+  rotY = (gyroY - ((BIAS_GYRO_Y) / (LSB_DEG_CALIBRATED / LSB_DEG)));
+  rotZ = (gyroZ - ((BIAS_GYRO_Z) / (LSB_DEG_CALIBRATED / LSB_DEG)));
+  Serial.println((BIAS_GYRO_X) / (LSB_DEG_CALIBRATED / LSB_DEG));
+  Serial.println((LSB_DEG_CALIBRATED / LSB_DEG));
+  Serial.println(gyroX);
+
+  rotX = mpuCalibMatrix[0][0] * rotX + mpuCalibMatrix[0][1] * rotY + mpuCalibMatrix[0][2] * rotZ;
+  rotY = mpuCalibMatrix[1][0] * rotX + mpuCalibMatrix[1][1] * rotY + mpuCalibMatrix[1][2] * rotZ;
+  rotZ = mpuCalibMatrix[2][0] * rotX + mpuCalibMatrix[2][1] * rotY + mpuCalibMatrix[2][2] * rotZ;
+
+  rotX = rotX / LSB_DEG;
+  rotY = rotY / LSB_DEG;
+  rotZ = rotZ / LSB_DEG;
 }
 
 MpuData mpuAverageForTime(int timeMS) {

@@ -114,7 +114,8 @@ void loop() {
   Serial.println(offsetGyroY);
   Serial.print("offsetGyroZ: ");
   Serial.println(offsetGyroZ);
-  String msg = String(offsetAccelX) + " " + String(offsetAccelY) + " " + String(offsetAccelZ); // only calibrating accelometer // + "," + String(offsetGyroX) + "," + String(offsetGyroY) + "," + String(offsetGyroZ);
+  // String msg = String(offsetAccelX) + " " + String(offsetAccelY) + " " + String(offsetAccelZ); // only calibrating accelometer // + "," + String(offsetGyroX) + "," + String(offsetGyroY) + "," + String(offsetGyroZ);
+  String msg = String(offsetGyroX) + "," + String(offsetGyroY) + "," + String(offsetGyroZ);
   client.publish(topic, msg.c_str());
 
   // izpis raw offset vrednosti
@@ -136,7 +137,7 @@ void setupMpu() {
   // 01 (1) +/- 500deg/s
   // 10 (2) +/- 1000deg/s
   // 11 (3) +/- 2000deg/s
-  Wire.write(0b00000000);  // nastavljen +/- 250deg/s
+  Wire.write(0b00011000);  // nastavljen +/- 2000deg/s
   Wire.endTransmission();
 
   // konfiguracija pospeškomera

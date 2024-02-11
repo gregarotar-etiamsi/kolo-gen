@@ -30,7 +30,7 @@ def connect_mqtt() -> mqtt_client:
 
 def subscribe(client: mqtt_client):
     def on_message(client, userdata, msg):
-        with open("raw_mpu6050_data.h", "a") as f:
+        with open("raw_mpu6050_data_2.h", "a") as f:
             f.write(msg.payload.decode())
             f.write("\n")
         # print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
