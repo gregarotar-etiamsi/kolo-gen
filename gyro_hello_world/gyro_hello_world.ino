@@ -1,5 +1,18 @@
 #include <Wire.h>
 
+#include <WiFi.h>
+#include <PubSubClient.h>
+
+const char *ssid = "K2_ext";
+const char *pass = "PoveziMeNaK2!";
+
+// MQTT Broker
+const char *mqtt_broker = "192.168.1.211";
+const int mqtt_port = 1883;
+const char *topic = "test/secure";
+const char *mqtt_username = "arduino";
+const char *mqtt_password = "pass";
+
 int16_t accelX, accelY, accelZ;
 float gForceX, gForceY, gForceZ;
 
@@ -8,11 +21,39 @@ float rotX, rotY, rotZ;
 
 int mpuAddr = 0x68;
 
+WiFiClient wifiClient;
+PubSubClient client(wifiClient);
+
 void setup() {
   Serial.begin(115200);
   Wire.begin(); // defaultni 21 (SDA) in 22 (SCL) drugace dodaj kot parameter
   Serial.print("Hello");
   setupMpu();
+  WiFi.begin(ssid, pass);
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    delay(500);
+  }
+  Serial.println("Connected to WiFi");
+  // connecting to a MQTT broker START
+    client.setServer(mqtt_broker, mqtt_port);
+
+    // loop until client is connected
+    while (!client.connected())
+    {
+        String client_id = generateRandomClientId();
+
+        if (client.connect(client_id.c_str(), mqtt_username, mqtt_password))
+        {
+            Serial.println("Public EMQX MQTT broker connected");
+        }
+        else
+        {
+            Serial.print("failed with state ");
+            Serial.print(client.state());
+            delay(2000);
+        }
+    }
 }
 
 void loop() {
@@ -21,8 +62,9 @@ void loop() {
 
   printData();
   // Serial.println(accelX);
-
-  delay(100);
+  String printData = String(rotX) + ", " + String(rotY) + ", " + String(rotZ);
+  client.publish(topic, printData.c_str());
+  delay(1000);
 }
 
 void setupMpu() {
@@ -99,32 +141,25 @@ void processGyroData() {
 
 
 void printData() {
-  // Serial.print("Gyro (deg)");
-  // Serial.print(" X=");
-  // Serial.print(rotX);
-  // Serial.print(" Y=");
-  // Serial.print(rotY);
-  // Serial.print(" Z=");
-  // Serial.print(rotZ);
-  // Serial.print(" Accel (g)");
-  // Serial.print(" X=");
-  // Serial.print(gForceX);
-  // Serial.print(" Y=");
-  // Serial.print(gForceY);
-  // Serial.print(" Z=");
-  // Serial.println(gForceZ);
-  // Serial.print("Gyro (deg)");
-  // Serial.print(" X=");
-  // Serial.print(rotX);
-  // Serial.print(" Y=");
-  // Serial.print(rotY);
-  // Serial.print(" Z=");
-  // Serial.print(rotZ);
+  Serial.print("Gyro (deg)");
+  Serial.print(" X=");
+  Serial.print(rotX);
+  Serial.print(" Y=");
+  Serial.print(rotY);
+  Serial.print(" Z=");
+  Serial.print(rotZ);
+  Serial.print(" Accel (g)");
+  Serial.print(" X=");
   Serial.print(gForceX);
-  Serial.print(",");
+  Serial.print(" Y=");
   Serial.print(gForceY);
-  Serial.print(",");
+  Serial.print(" Z=");
   Serial.println(gForceZ);
+  // Serial.print(gForceX);
+  // Serial.print(",");
+  // Serial.print(gForceY);
+  // Serial.print(",");
+  // Serial.println(gForceZ);
 }
 
 
@@ -145,5 +180,24 @@ void printRawData() {
   Serial.println(accelZ);
 }
 
+
+char generateRandomChar() {
+    const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    const int charsetSize = sizeof(charset) - 1;
+
+    // Generate a random index within the character set
+    int randomIndex = rand() % charsetSize;
+
+    // Return the random character
+    return charset[randomIndex];
+}
+
+String generateRandomClientId() {
+    String clientId = "ESP32Client-";
+    for (int i = 0; i < 8; ++i) {
+        clientId += generateRandomChar();
+    }
+    return clientId;
+}
 
 

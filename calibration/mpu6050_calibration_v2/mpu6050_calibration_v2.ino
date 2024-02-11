@@ -33,6 +33,7 @@ unsigned int counter = 0;
 
 void setup() {
   Serial.begin(115200);
+  pinMode(2, OUTPUT);
   Wire.begin();  // defaultni 21 (SDA) in 22 (SCL) drugace dodaj kot parameter
   setupMpu();
   Serial.println("place device on a level surface with back plate leveled");
@@ -71,8 +72,9 @@ int16_t offsetGyroX, offsetGyroY, offsetGyroZ;
 
 void loop() {
 
-  Serial.println("Starting in 10 seconds");
+  digitalWrite(2, LOW);
   delay(10000);
+  digitalWrite(2, HIGH);
   Serial.print("Started!");
   while (counter < steviloCiklov) {
     recordAccelRegisters();
@@ -84,12 +86,12 @@ void loop() {
     sumGyroY += gyroY;
     sumGyroZ += gyroZ;
     counter++;
-    delay(10);
+    delay(2);
   }
   offsetAccelX = sumAccelX / counter;
   offsetAccelY = sumAccelY / counter;
   // FIME samo pri +-2G
-  offsetAccelZ = sumAccelZ / counter - 16384; // zato, ker mora biti 1G
+  offsetAccelZ = sumAccelZ / counter; // ERROR: pazi ker je tako ok in če odšteješ potem ne bo ok ker je to samo takrat kadar je kot offset
   offsetGyroX = sumGyroX / counter;
   offsetGyroY = sumGyroY / counter;
   offsetGyroZ = sumGyroZ / counter;
@@ -114,14 +116,10 @@ void loop() {
   Serial.println(offsetGyroY);
   Serial.print("offsetGyroZ: ");
   Serial.println(offsetGyroZ);
-  String msg = String(offsetAccelX) + "," + String(offsetAccelY) + "," + String(offsetAccelZ) + "," + String(offsetGyroX) + "," + String(offsetGyroY) + "," + String(offsetGyroZ);
+  String msg = String(offsetAccelX) + " " + String(offsetAccelY) + " " + String(offsetAccelZ); // only calibrating accelometer // + "," + String(offsetGyroX) + "," + String(offsetGyroY) + "," + String(offsetGyroZ);
   client.publish(topic, msg.c_str());
 
-
-
   // izpis raw offset vrednosti
-  // ponovitev čez 10 sekund
-  delay(1000);
 }
 
 void setupMpu() {
