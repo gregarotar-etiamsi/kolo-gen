@@ -68,8 +68,6 @@ int16_t offsetAccelX, offsetAccelY, offsetAccelZ;
 int16_t offsetGyroX, offsetGyroY, offsetGyroZ;
 
 
-
-
 void loop() {
 
   digitalWrite(2, LOW);

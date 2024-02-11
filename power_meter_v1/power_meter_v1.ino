@@ -47,10 +47,6 @@ struct MpuData {
   double rotZAverage;
 };
 
-
-
-
-
 // HX711
 #define SCALE_DOUT_PIN 16  // Replace with your chosen GPIO pin
 #define SCALE_SCK_PIN 4    // Replace with your chosen GPIO pin
@@ -98,22 +94,24 @@ MpuData mpuData;
 
 void loop() {
   // bere podatke MPU-6050
-  // recordAccelRegisters();
-  // recordGyroRegisters();
-  mpuData = mpuAverageForTime(100);
+  recordAccelRegisters();
+  recordGyroRegisters();
+  // mpuData = mpuAverageForTime(100);
 
-  getWeight(1);
-  mqttMsg = String(mpuData.gForceXAverage) + "," + String(mpuData.gForceYAverage) + "," + String(mpuData.gForceZAverage) + "," + String(mpuData.rotXAverage) + "," + String(mpuData.rotYAverage) + "," + String(mpuData.rotZAverage) + "," + String(rawWeight);
+  getWeight();
+  // mqttMsg = String(mpuData.gForceXAverage) + "," + String(mpuData.gForceYAverage) + "," + String(mpuData.gForceZAverage) + "," + String(mpuData.rotXAverage) + "," + String(mpuData.rotYAverage) + "," + String(mpuData.rotZAverage) + "," + String(rawWeight);
+  mqttMsg = String(gForceX) + "," + String(gForceY) + "," + String(gForceZ) + "," + String(rotX) + "," + String(rotY) + "," + String(rotZ) + "," + String(rawWeight);
   client.publish(topic, mqttMsg.c_str());
-  // delay(100);
+  delay(5);
 }
 
 // functions for HX711
 // hmt -> how many times
 // FIXME -> depends on global variable
-void getWeight(int hmt) {
+// WARNING: be careful when using because it will not neccesseraly update
+void getWeight() {
   if (scale.is_ready()) {
-    rawWeight = scale.get_units(hmt);
+    rawWeight = scale.get_units(1);
   }
 }
 
