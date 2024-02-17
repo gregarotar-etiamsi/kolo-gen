@@ -31,7 +31,7 @@ int mpuAddr = 0x68;
 // calibration numbers
 // fixme only for 2G raw data
 typedef float Matrix3x3[3][3];
-typedef float Matrix3x1[3][3];
+typedef float Matrix3x1[3][1];
 Matrix3x3 mpuCalibMatrix = {
   { 1.000542, 0.000006, 0.002136 },
   { 0.000006, 0.999202, 0.001130 },
@@ -63,6 +63,7 @@ void setup() {
   // hx711
   scale.begin(SCALE_DOUT_PIN, SCALE_SCK_PIN);
   scale.tare();
+  // scale.tare();
 
   WiFi.begin(ssid, pass);
   while (WiFi.status() != WL_CONNECTED) {
@@ -101,7 +102,8 @@ void loop() {
   getWeight();
   // mqttMsg = String(mpuData.gForceXAverage) + "," + String(mpuData.gForceYAverage) + "," + String(mpuData.gForceZAverage) + "," + String(mpuData.rotXAverage) + "," + String(mpuData.rotYAverage) + "," + String(mpuData.rotZAverage) + "," + String(rawWeight);
   mqttMsg = String(gForceX) + "," + String(gForceY) + "," + String(gForceZ) + "," + String(rotX) + "," + String(rotY) + "," + String(rotZ) + "," + String(rawWeight);
-  client.publish(topic, mqttMsg.c_str());
+  // client.publish(topic, mqttMsg.c_str());
+  Serial.println(mqttMsg);
   delay(500);
 }
 
@@ -234,9 +236,6 @@ void processGyroData() {
   rotX = (gyroX - ((BIAS_GYRO_X) / (LSB_DEG_CALIBRATED / LSB_DEG)));
   rotY = (gyroY - ((BIAS_GYRO_Y) / (LSB_DEG_CALIBRATED / LSB_DEG)));
   rotZ = (gyroZ - ((BIAS_GYRO_Z) / (LSB_DEG_CALIBRATED / LSB_DEG)));
-  Serial.println((BIAS_GYRO_X) / (LSB_DEG_CALIBRATED / LSB_DEG));
-  Serial.println((LSB_DEG_CALIBRATED / LSB_DEG));
-  Serial.println(gyroX);
 
   rotX = mpuCalibMatrix[0][0] * rotX + mpuCalibMatrix[0][1] * rotY + mpuCalibMatrix[0][2] * rotZ;
   rotY = mpuCalibMatrix[1][0] * rotX + mpuCalibMatrix[1][1] * rotY + mpuCalibMatrix[1][2] * rotZ;
